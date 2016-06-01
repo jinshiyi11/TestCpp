@@ -4,6 +4,9 @@
     <Filter Include="functor">
       <UniqueIdentifier>{c40f7da2-7c29-4edb-a9a3-58ad7d070254}</UniqueIdentifier>
     </Filter>
+    <Filter Include="sigslot">
+      <UniqueIdentifier>{6239c5ec-411b-4605-8ea4-1fd246e24e1f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)functor\TestBind.cpp">
@@ -11,6 +14,18 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)TestRValueReference.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestTuple.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\sigslot.cc">
+      <Filter>sigslot</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\TestSigslot.cpp">
+      <Filter>sigslot</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\Switch.cpp">
+      <Filter>sigslot</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\Light.cpp">
+      <Filter>sigslot</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)functor\TestBind.h">
@@ -18,5 +33,17 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)TestRValueReference.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestTuple.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\sigslot.h">
+      <Filter>sigslot</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\TestSigslot.h">
+      <Filter>sigslot</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\Switch.h">
+      <Filter>sigslot</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\Light.h">
+      <Filter>sigslot</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
