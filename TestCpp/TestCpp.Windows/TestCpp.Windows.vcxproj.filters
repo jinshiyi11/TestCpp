@@ -24,24 +24,12 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="TestTuple.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="TestRValueReference.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="TestCpp.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TestTuple.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TestRValueReference.cpp">
+    <ClCompile Include="TestCpp.Windows.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

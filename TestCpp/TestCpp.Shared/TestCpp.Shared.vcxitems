@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{8c230463-3223-4721-834d-81b8b31c78c1}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)functor\TestBind.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestRValueReference.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestTuple.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)functor\TestBind.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestRValueReference.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestTuple.h" />
+  </ItemGroup>
+</Project>

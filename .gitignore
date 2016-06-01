@@ -1,4 +1,7 @@
-/TestCpp/Debug
-/TestCpp/TestCpp.vcxproj.user
-/TestCpp/TestCpp.sdf
-/TestCpp/TestCpp.VC.opendb
+
+/x64
+/ARM
+/Debug
+/ipch
+/TestCpp.VC.opendb
+/TestCpp.sdf

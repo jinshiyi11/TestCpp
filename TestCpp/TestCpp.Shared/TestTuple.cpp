@@ -15,9 +15,9 @@ TestTuple::~TestTuple()
 
 void TestTuple::test()
 {
-    std::tuple<int, std::string, float> t1(1, "ggd", 5.1);
+    std::tuple<int, std::string, float> t1(1, "ggd", 5.1f);
 
     int x = std::get<0>(t1);
 
-    std::cout << "testTuple ok";
+    std::cout << "testTuple ok"<<x;
 }
