@@ -5,3 +5,9 @@
 /ipch
 /TestCpp.VC.opendb
 /TestCpp.sdf
+/TestCpp/TestCpp.Android/ARM
+/TestCpp/TestCpp.Android/x64
+/TestCpp/TestCpp.Windows/Debug
+/TestCpp/TestCpp.Windows/x64
+/TestCpp/TestCpp.iOS/ARM
+/TestCpp/TestCpp.iOS/x64
