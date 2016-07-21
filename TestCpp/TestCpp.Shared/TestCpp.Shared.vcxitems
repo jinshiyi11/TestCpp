@@ -19,6 +19,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\sigslot.cc" />
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\Switch.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\TestSigslot.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestAuto.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestRValueReference.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestTuple.cpp" />
   </ItemGroup>
@@ -28,6 +29,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\sigslot.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\Switch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\TestSigslot.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestAuto.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestRValueReference.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestTuple.h" />
   </ItemGroup>

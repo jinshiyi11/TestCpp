@@ -26,6 +26,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\sigslot.cc">
       <Filter>sigslot</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestAuto.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)functor\TestBind.h">
@@ -45,5 +46,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\Light.h">
       <Filter>sigslot</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestAuto.h" />
   </ItemGroup>
 </Project>

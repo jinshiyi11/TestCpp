@@ -5,13 +5,21 @@
 #include "TestTuple.h"
 #include "TestRValueReference.h"
 #include "functor/TestBind.h"
+#include "TestAuto.h"
 
 #include <functional>
 
 
 int main()
 {
+    int x = 0;
+    int y = 1;
+
+    int& p = x;
+    p = y;
+
     //TestTuple::test();
+    TestAuto::main();
 
     TestBind::test();
 
