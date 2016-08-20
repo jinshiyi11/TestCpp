@@ -1,3 +1,6 @@
+# C++ 各种问题收集
+## 模板
+- 实现一个单例模板
 - template&lt; classFunction, class... Args &gt; explicitThread(Function&amp;&amp; f, Args&amp;&amp;... args);
 
 模板参数类型声明为class... Args怎么用？
