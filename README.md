@@ -1,4 +1,5 @@
 # C++ 各种问题收集
+## C++语法
 ## 模板
 - 实现一个单例模板
 - template&lt; classFunction, class... Args &gt; explicitThread(Function&amp;&amp; f, Args&amp;&amp;... args);
