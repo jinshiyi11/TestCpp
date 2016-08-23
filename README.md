@@ -5,6 +5,8 @@
 - template&lt; classFunction, class... Args &gt; explicitThread(Function&amp;&amp; f, Args&amp;&amp;... args);
 
 模板参数类型声明为class... Args怎么用？
+- 实现一个unique_ptr,unique_ptr的Deleter 模板参数实现，如何自定义Deleter
+- noncopyable模板实现
 
 - c++中可变参数怎么用？
 - std::_lock\_guard_的用法
