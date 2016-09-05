@@ -12,23 +12,13 @@ namespace easy {
     /// The large majority of the implementation of this class is found in the rbtree
     /// base class. We control the behaviour of rbtree via template parameters.
     ///
-    /// Pool allocation
-    /// If you want to make a custom memory pool for a map container, your pool 
-    /// needs to contain items of type map::node_type. So if you have a memory
-    /// pool that has a constructor that takes the size of pool items and the
-    /// count of pool items, you would do this (assuming that MemoryPool implements
-    /// the Allocator interface):
-    ///     typedef map<Widget, int, less<Widget>, MemoryPool> WidgetMap;  // Delare your WidgetMap type.
-    ///     MemoryPool myPool(sizeof(WidgetMap::node_type), 100);          // Make a pool of 100 Widget nodes.
-    ///     WidgetMap myMap(&myPool);                                      // Create a map that uses the pool.
-    ///
     template <typename Key, typename T, typename Compare = easy::less<Key> >
     class map
-        : public rbtree<Key, easy::pair<const Key, T>, Compare, easy::use_first<easy::pair<const Key, T> >, true, true>
+        : public rbtree<Key, easy::pair<Key, T>, Compare, easy::use_first<easy::pair<Key, T> >, true, true>
     {
     public:
-        typedef rbtree<Key, easy::pair<const Key, T>, Compare,
-            easy::use_first<easy::pair<const Key, T> >, true, true>   base_type;
+        typedef rbtree<Key, easy::pair<Key, T>, Compare,
+            easy::use_first<easy::pair<Key, T> >, true, true>   base_type;
         typedef map<Key, T, Compare>                                     this_type;
         typedef typename base_type::size_type                                       size_type;
         typedef typename base_type::key_type                                        key_type;

@@ -31,6 +31,7 @@
 
 #define EASY_LIKELY(x)   (x)
 #define EASY_VALIDATE_COMPARE(expression)
+#define EA_ANALYSIS_ASSUME(x)
 
 namespace easy
 {
@@ -69,12 +70,23 @@ namespace easy
         pair()
             : first(),
             second() {}
+
+        pair(const T1 &first_, const T2 &second_)
+        {
+            first = first_;
+            second = second_;
+        }
+        pair(const pair<T1, T2> & pair_)
+        {
+            first = pair_.first;
+            second = pair_.second;
+        }
     };
 
     template <typename T1, typename T2>
-    inline pair<T1, T2> make_pair(T1 a, T2 b)
+    inline pair<T1, T2> make_pair(const T1& a, const T2& b)
     {
-        return eastl::pair<T1, T2>(a, b);
+        return easy::pair<T1, T2>(a, b);
     }
 
     // type_select
@@ -218,25 +230,6 @@ namespace easy
     };
 
 
-    // rbtree_node_base functions
-    //
-    // These are the fundamental functions that we use to maintain the 
-    // tree. The bulk of the work of the tree maintenance is done in 
-    // these functions.
-    //
-    EASTL_API rbtree_node_base* RBTreeIncrement(const rbtree_node_base* pNode);
-    EASTL_API rbtree_node_base* RBTreeDecrement(const rbtree_node_base* pNode);
-    EASTL_API rbtree_node_base* RBTreeGetMinChild(const rbtree_node_base* pNode);
-    EASTL_API rbtree_node_base* RBTreeGetMaxChild(const rbtree_node_base* pNode);
-    EASTL_API unsigned int      RBTreeGetBlackCount(const rbtree_node_base* pNodeTop,
-        const rbtree_node_base* pNodeBottom);
-    EASTL_API void              RBTreeInsert(rbtree_node_base* pNode,
-        rbtree_node_base* pNodeParent,
-        rbtree_node_base* pNodeAnchor,
-        RBTreeSide insertionSide);
-    EASTL_API void              RBTreeErase(rbtree_node_base* pNode,
-        rbtree_node_base* pNodeAnchor);
-
 
     /// rbtree_iterator
     ///
@@ -270,6 +263,35 @@ namespace easy
 
         rbtree_iterator& operator--();
         rbtree_iterator  operator--(int);
+
+    private:
+        /// RBTreeIncrement
+        /// Returns the next item in a sorted red-black tree.
+        ///
+        EASTL_API rbtree_node_base* RBTreeIncrement(const rbtree_node_base* pNode)
+        {
+            if (pNode->mpNodeRight)
+            {
+                pNode = pNode->mpNodeRight;
+
+                while (pNode->mpNodeLeft)
+                    pNode = pNode->mpNodeLeft;
+            } else
+            {
+                rbtree_node_base* pNodeTemp = pNode->mpNodeParent;
+
+                while (pNode == pNodeTemp->mpNodeRight)
+                {
+                    pNode = pNodeTemp;
+                    pNodeTemp = pNodeTemp->mpNodeParent;
+                }
+
+                if (pNode->mpNodeRight != pNodeTemp)
+                    pNode = pNodeTemp;
+            }
+
+            return const_cast<rbtree_node_base*>(pNode);
+        }
 
     }; // rbtree_iterator
 
@@ -539,10 +561,6 @@ namespace easy
 
         iterator       upper_bound(const key_type& key);
         const_iterator upper_bound(const key_type& key) const;
-
-        bool validate() const;
-        int  validate_iterator(const_iterator i) const;
-
     protected:
         void       DoFreeNode(node_type* pNode);
 
@@ -565,29 +583,434 @@ namespace easy
         node_type* DoGetKeyInsertionPositionUniqueKeysHint(const_iterator position, bool& bForceToLeft, const key_type& key);
         node_type* DoGetKeyInsertionPositionNonuniqueKeysHint(const_iterator position, bool& bForceToLeft, const key_type& key);
 
+    private:
+        // rbtree_node_base functions
+        //
+        // These are the fundamental functions that we use to maintain the 
+        // tree. The bulk of the work of the tree maintenance is done in 
+        // these functions.
+        //
+        EASTL_API inline rbtree_node_base* RBTreeGetMinChild(const rbtree_node_base* pNodeBase)
+        {
+            while (pNodeBase->mpNodeLeft)
+                pNodeBase = pNodeBase->mpNodeLeft;
+            return const_cast<rbtree_node_base*>(pNodeBase);
+        }
+
+        EASTL_API inline rbtree_node_base* RBTreeGetMaxChild(const rbtree_node_base* pNodeBase)
+        {
+            while (pNodeBase->mpNodeRight)
+                pNodeBase = pNodeBase->mpNodeRight;
+            return const_cast<rbtree_node_base*>(pNodeBase);
+        }
+
+        /// RBTreeIncrement
+        /// Returns the previous item in a sorted red-black tree.
+        ///
+        EASTL_API rbtree_node_base* RBTreeDecrement(const rbtree_node_base* pNode)
+        {
+            if ((pNode->mpNodeParent->mpNodeParent == pNode) && (pNode->mColor == kRBTreeColorRed))
+                return pNode->mpNodeRight;
+            else if (pNode->mpNodeLeft)
+            {
+                rbtree_node_base* pNodeTemp = pNode->mpNodeLeft;
+
+                while (pNodeTemp->mpNodeRight)
+                    pNodeTemp = pNodeTemp->mpNodeRight;
+
+                return pNodeTemp;
+            }
+
+            rbtree_node_base* pNodeTemp = pNode->mpNodeParent;
+
+            while (pNode == pNodeTemp->mpNodeLeft)
+            {
+                pNode = pNodeTemp;
+                pNodeTemp = pNodeTemp->mpNodeParent;
+            }
+
+            return const_cast<rbtree_node_base*>(pNodeTemp);
+        }
+
+
+
+        /// RBTreeGetBlackCount
+        /// Counts the number of black nodes in an red-black tree, from pNode down to the given bottom node.  
+        /// We don't count red nodes because red-black trees don't really care about
+        /// red node counts; it is black node counts that are significant in the 
+        /// maintenance of a balanced tree.
+        ///
+        EASTL_API size_t RBTreeGetBlackCount(const rbtree_node_base* pNodeTop, const rbtree_node_base* pNodeBottom)
+        {
+            size_t nCount = 0;
+
+            for (; pNodeBottom; pNodeBottom = pNodeBottom->mpNodeParent)
+            {
+                if (pNodeBottom->mColor == kRBTreeColorBlack)
+                    ++nCount;
+
+                if (pNodeBottom == pNodeTop)
+                    break;
+            }
+
+            return nCount;
+        }
+
+
+        /// RBTreeRotateLeft
+        /// Does a left rotation about the given node. 
+        /// If you want to understand tree rotation, any book on algorithms will
+        /// discussion the topic in good detail.
+        rbtree_node_base* RBTreeRotateLeft(rbtree_node_base* pNode, rbtree_node_base* pNodeRoot)
+        {
+            rbtree_node_base* const pNodeTemp = pNode->mpNodeRight;
+
+            pNode->mpNodeRight = pNodeTemp->mpNodeLeft;
+
+            if (pNodeTemp->mpNodeLeft)
+                pNodeTemp->mpNodeLeft->mpNodeParent = pNode;
+            pNodeTemp->mpNodeParent = pNode->mpNodeParent;
+
+            if (pNode == pNodeRoot)
+                pNodeRoot = pNodeTemp;
+            else if (pNode == pNode->mpNodeParent->mpNodeLeft)
+                pNode->mpNodeParent->mpNodeLeft = pNodeTemp;
+            else
+                pNode->mpNodeParent->mpNodeRight = pNodeTemp;
+
+            pNodeTemp->mpNodeLeft = pNode;
+            pNode->mpNodeParent = pNodeTemp;
+
+            return pNodeRoot;
+        }
+
+
+
+        /// RBTreeRotateRight
+        /// Does a right rotation about the given node. 
+        /// If you want to understand tree rotation, any book on algorithms will
+        /// discussion the topic in good detail.
+        rbtree_node_base* RBTreeRotateRight(rbtree_node_base* pNode, rbtree_node_base* pNodeRoot)
+        {
+            rbtree_node_base* const pNodeTemp = pNode->mpNodeLeft;
+
+            pNode->mpNodeLeft = pNodeTemp->mpNodeRight;
+
+            if (pNodeTemp->mpNodeRight)
+                pNodeTemp->mpNodeRight->mpNodeParent = pNode;
+            pNodeTemp->mpNodeParent = pNode->mpNodeParent;
+
+            if (pNode == pNodeRoot)
+                pNodeRoot = pNodeTemp;
+            else if (pNode == pNode->mpNodeParent->mpNodeRight)
+                pNode->mpNodeParent->mpNodeRight = pNodeTemp;
+            else
+                pNode->mpNodeParent->mpNodeLeft = pNodeTemp;
+
+            pNodeTemp->mpNodeRight = pNode;
+            pNode->mpNodeParent = pNodeTemp;
+
+            return pNodeRoot;
+        }
+
+
+
+
+        /// RBTreeInsert
+        /// Insert a node into the tree and rebalance the tree as a result of the 
+        /// disturbance the node introduced.
+        ///
+        EASTL_API void RBTreeInsert(rbtree_node_base* pNode,
+            rbtree_node_base* pNodeParent,
+            rbtree_node_base* pNodeAnchor,
+            RBTreeSide insertionSide)
+        {
+            rbtree_node_base*& pNodeRootRef = pNodeAnchor->mpNodeParent;
+
+            // Initialize fields in new node to insert.
+            pNode->mpNodeParent = pNodeParent;
+            pNode->mpNodeRight = NULL;
+            pNode->mpNodeLeft = NULL;
+            pNode->mColor = kRBTreeColorRed;
+
+            // Insert the node.
+            if (insertionSide == kRBTreeSideLeft)
+            {
+                pNodeParent->mpNodeLeft = pNode; // Also makes (leftmost = pNode) when (pNodeParent == pNodeAnchor)
+
+                if (pNodeParent == pNodeAnchor)
+                {
+                    pNodeAnchor->mpNodeParent = pNode;
+                    pNodeAnchor->mpNodeRight = pNode;
+                } else if (pNodeParent == pNodeAnchor->mpNodeLeft)
+                    pNodeAnchor->mpNodeLeft = pNode; // Maintain leftmost pointing to min node
+            } else
+            {
+                pNodeParent->mpNodeRight = pNode;
+
+                if (pNodeParent == pNodeAnchor->mpNodeRight)
+                    pNodeAnchor->mpNodeRight = pNode; // Maintain rightmost pointing to max node
+            }
+
+            // Rebalance the tree.
+            while ((pNode != pNodeRootRef) && (pNode->mpNodeParent->mColor == kRBTreeColorRed))
+            {
+                EA_ANALYSIS_ASSUME(pNode->mpNodeParent != NULL);
+                rbtree_node_base* const pNodeParentParent = pNode->mpNodeParent->mpNodeParent;
+
+                if (pNode->mpNodeParent == pNodeParentParent->mpNodeLeft)
+                {
+                    rbtree_node_base* const pNodeTemp = pNodeParentParent->mpNodeRight;
+
+                    if (pNodeTemp && (pNodeTemp->mColor == kRBTreeColorRed))
+                    {
+                        pNode->mpNodeParent->mColor = kRBTreeColorBlack;
+                        pNodeTemp->mColor = kRBTreeColorBlack;
+                        pNodeParentParent->mColor = kRBTreeColorRed;
+                        pNode = pNodeParentParent;
+                    } else
+                    {
+                        if (pNode->mpNodeParent && pNode == pNode->mpNodeParent->mpNodeRight)
+                        {
+                            pNode = pNode->mpNodeParent;
+                            pNodeRootRef = RBTreeRotateLeft(pNode, pNodeRootRef);
+                        }
+
+                        EA_ANALYSIS_ASSUME(pNode->mpNodeParent != NULL);
+                        pNode->mpNodeParent->mColor = kRBTreeColorBlack;
+                        pNodeParentParent->mColor = kRBTreeColorRed;
+                        pNodeRootRef = RBTreeRotateRight(pNodeParentParent, pNodeRootRef);
+                    }
+                } else
+                {
+                    rbtree_node_base* const pNodeTemp = pNodeParentParent->mpNodeLeft;
+
+                    if (pNodeTemp && (pNodeTemp->mColor == kRBTreeColorRed))
+                    {
+                        pNode->mpNodeParent->mColor = kRBTreeColorBlack;
+                        pNodeTemp->mColor = kRBTreeColorBlack;
+                        pNodeParentParent->mColor = kRBTreeColorRed;
+                        pNode = pNodeParentParent;
+                    } else
+                    {
+                        EA_ANALYSIS_ASSUME(pNode != NULL && pNode->mpNodeParent != NULL);
+
+                        if (pNode == pNode->mpNodeParent->mpNodeLeft)
+                        {
+                            pNode = pNode->mpNodeParent;
+                            pNodeRootRef = RBTreeRotateRight(pNode, pNodeRootRef);
+                        }
+
+                        pNode->mpNodeParent->mColor = kRBTreeColorBlack;
+                        pNodeParentParent->mColor = kRBTreeColorRed;
+                        pNodeRootRef = RBTreeRotateLeft(pNodeParentParent, pNodeRootRef);
+                    }
+                }
+            }
+
+            EA_ANALYSIS_ASSUME(pNodeRootRef != NULL);
+            pNodeRootRef->mColor = kRBTreeColorBlack;
+
+        } // RBTreeInsert
+
+
+
+
+          /// RBTreeErase
+          /// Erase a node from the tree.
+          ///
+        EASTL_API void RBTreeErase(rbtree_node_base* pNode, rbtree_node_base* pNodeAnchor)
+        {
+            rbtree_node_base*& pNodeRootRef = pNodeAnchor->mpNodeParent;
+            rbtree_node_base*& pNodeLeftmostRef = pNodeAnchor->mpNodeLeft;
+            rbtree_node_base*& pNodeRightmostRef = pNodeAnchor->mpNodeRight;
+            rbtree_node_base*  pNodeSuccessor = pNode;
+            rbtree_node_base*  pNodeChild = NULL;
+            rbtree_node_base*  pNodeChildParent = NULL;
+
+            if (pNodeSuccessor->mpNodeLeft == NULL)         // pNode has at most one non-NULL child.
+                pNodeChild = pNodeSuccessor->mpNodeRight;  // pNodeChild might be null.
+            else if (pNodeSuccessor->mpNodeRight == NULL)   // pNode has exactly one non-NULL child.
+                pNodeChild = pNodeSuccessor->mpNodeLeft;   // pNodeChild is not null.
+            else
+            {
+                // pNode has two non-null children. Set pNodeSuccessor to pNode's successor. pNodeChild might be NULL.
+                pNodeSuccessor = pNodeSuccessor->mpNodeRight;
+
+                while (pNodeSuccessor->mpNodeLeft)
+                    pNodeSuccessor = pNodeSuccessor->mpNodeLeft;
+
+                pNodeChild = pNodeSuccessor->mpNodeRight;
+            }
+
+            // Here we remove pNode from the tree and fix up the node pointers appropriately around it.
+            if (pNodeSuccessor == pNode) // If pNode was a leaf node (had both NULL children)...
+            {
+                pNodeChildParent = pNodeSuccessor->mpNodeParent;  // Assign pNodeReplacement's parent.
+
+                if (pNodeChild)
+                    pNodeChild->mpNodeParent = pNodeSuccessor->mpNodeParent;
+
+                if (pNode == pNodeRootRef) // If the node being deleted is the root node...
+                    pNodeRootRef = pNodeChild; // Set the new root node to be the pNodeReplacement.
+                else
+                {
+                    if (pNode == pNode->mpNodeParent->mpNodeLeft) // If pNode is a left node...
+                        pNode->mpNodeParent->mpNodeLeft = pNodeChild;  // Make pNode's replacement node be on the same side.
+                    else
+                        pNode->mpNodeParent->mpNodeRight = pNodeChild;
+                    // Now pNode is disconnected from the bottom of the tree (recall that in this pathway pNode was determined to be a leaf).
+                }
+
+                if (pNode == pNodeLeftmostRef) // If pNode is the tree begin() node...
+                {
+                    // Because pNode is the tree begin(), pNode->mpNodeLeft must be NULL.
+                    // Here we assign the new begin() (first node).
+                    if (pNode->mpNodeRight && pNodeChild)
+                    {
+                        pNodeLeftmostRef = RBTreeGetMinChild(pNodeChild);
+                    } else
+                        pNodeLeftmostRef = pNode->mpNodeParent; // This  makes (pNodeLeftmostRef == end()) if (pNode == root node)
+                }
+
+                if (pNode == pNodeRightmostRef) // If pNode is the tree last (rbegin()) node...
+                {
+                    // Because pNode is the tree rbegin(), pNode->mpNodeRight must be NULL.
+                    // Here we assign the new rbegin() (last node)
+                    if (pNode->mpNodeLeft && pNodeChild)
+                    {
+                        pNodeRightmostRef = RBTreeGetMaxChild(pNodeChild);
+                    } else // pNodeChild == pNode->mpNodeLeft
+                        pNodeRightmostRef = pNode->mpNodeParent; // makes pNodeRightmostRef == &mAnchor if pNode == pNodeRootRef
+                }
+            } else // else (pNodeSuccessor != pNode)
+            {
+                // Relink pNodeSuccessor in place of pNode. pNodeSuccessor is pNode's successor.
+                // We specifically set pNodeSuccessor to be on the right child side of pNode, so fix up the left child side.
+                pNode->mpNodeLeft->mpNodeParent = pNodeSuccessor;
+                pNodeSuccessor->mpNodeLeft = pNode->mpNodeLeft;
+
+                if (pNodeSuccessor == pNode->mpNodeRight) // If pNode's successor was at the bottom of the tree... (yes that's effectively what this statement means)
+                    pNodeChildParent = pNodeSuccessor; // Assign pNodeReplacement's parent.
+                else
+                {
+                    pNodeChildParent = pNodeSuccessor->mpNodeParent;
+
+                    if (pNodeChild)
+                        pNodeChild->mpNodeParent = pNodeChildParent;
+
+                    pNodeChildParent->mpNodeLeft = pNodeChild;
+
+                    pNodeSuccessor->mpNodeRight = pNode->mpNodeRight;
+                    pNode->mpNodeRight->mpNodeParent = pNodeSuccessor;
+                }
+
+                if (pNode == pNodeRootRef)
+                    pNodeRootRef = pNodeSuccessor;
+                else if (pNode == pNode->mpNodeParent->mpNodeLeft)
+                    pNode->mpNodeParent->mpNodeLeft = pNodeSuccessor;
+                else
+                    pNode->mpNodeParent->mpNodeRight = pNodeSuccessor;
+
+                // Now pNode is disconnected from the tree.
+
+                pNodeSuccessor->mpNodeParent = pNode->mpNodeParent;
+                easy::swap(pNodeSuccessor->mColor, pNode->mColor);
+            }
+
+            // Here we do tree balancing as per the conventional red-black tree algorithm.
+            if (pNode->mColor == kRBTreeColorBlack)
+            {
+                while ((pNodeChild != pNodeRootRef) && ((pNodeChild == NULL) || (pNodeChild->mColor == kRBTreeColorBlack)))
+                {
+                    if (pNodeChild == pNodeChildParent->mpNodeLeft)
+                    {
+                        rbtree_node_base* pNodeTemp = pNodeChildParent->mpNodeRight;
+
+                        if (pNodeTemp->mColor == kRBTreeColorRed)
+                        {
+                            pNodeTemp->mColor = kRBTreeColorBlack;
+                            pNodeChildParent->mColor = kRBTreeColorRed;
+                            pNodeRootRef = RBTreeRotateLeft(pNodeChildParent, pNodeRootRef);
+                            pNodeTemp = pNodeChildParent->mpNodeRight;
+                        }
+
+                        if (((pNodeTemp->mpNodeLeft == NULL) || (pNodeTemp->mpNodeLeft->mColor == kRBTreeColorBlack)) &&
+                            ((pNodeTemp->mpNodeRight == NULL) || (pNodeTemp->mpNodeRight->mColor == kRBTreeColorBlack)))
+                        {
+                            pNodeTemp->mColor = kRBTreeColorRed;
+                            pNodeChild = pNodeChildParent;
+                            pNodeChildParent = pNodeChildParent->mpNodeParent;
+                        } else
+                        {
+                            if ((pNodeTemp->mpNodeRight == NULL) || (pNodeTemp->mpNodeRight->mColor == kRBTreeColorBlack))
+                            {
+                                pNodeTemp->mpNodeLeft->mColor = kRBTreeColorBlack;
+                                pNodeTemp->mColor = kRBTreeColorRed;
+                                pNodeRootRef = RBTreeRotateRight(pNodeTemp, pNodeRootRef);
+                                pNodeTemp = pNodeChildParent->mpNodeRight;
+                            }
+
+                            pNodeTemp->mColor = pNodeChildParent->mColor;
+                            pNodeChildParent->mColor = kRBTreeColorBlack;
+
+                            if (pNodeTemp->mpNodeRight)
+                                pNodeTemp->mpNodeRight->mColor = kRBTreeColorBlack;
+
+                            pNodeRootRef = RBTreeRotateLeft(pNodeChildParent, pNodeRootRef);
+                            break;
+                        }
+                    } else
+                    {
+                        // The following is the same as above, with mpNodeRight <-> mpNodeLeft.
+                        rbtree_node_base* pNodeTemp = pNodeChildParent->mpNodeLeft;
+
+                        if (pNodeTemp->mColor == kRBTreeColorRed)
+                        {
+                            pNodeTemp->mColor = kRBTreeColorBlack;
+                            pNodeChildParent->mColor = kRBTreeColorRed;
+
+                            pNodeRootRef = RBTreeRotateRight(pNodeChildParent, pNodeRootRef);
+                            pNodeTemp = pNodeChildParent->mpNodeLeft;
+                        }
+
+                        if (((pNodeTemp->mpNodeRight == NULL) || (pNodeTemp->mpNodeRight->mColor == kRBTreeColorBlack)) &&
+                            ((pNodeTemp->mpNodeLeft == NULL) || (pNodeTemp->mpNodeLeft->mColor == kRBTreeColorBlack)))
+                        {
+                            pNodeTemp->mColor = kRBTreeColorRed;
+                            pNodeChild = pNodeChildParent;
+                            pNodeChildParent = pNodeChildParent->mpNodeParent;
+                        } else
+                        {
+                            if ((pNodeTemp->mpNodeLeft == NULL) || (pNodeTemp->mpNodeLeft->mColor == kRBTreeColorBlack))
+                            {
+                                pNodeTemp->mpNodeRight->mColor = kRBTreeColorBlack;
+                                pNodeTemp->mColor = kRBTreeColorRed;
+
+                                pNodeRootRef = RBTreeRotateLeft(pNodeTemp, pNodeRootRef);
+                                pNodeTemp = pNodeChildParent->mpNodeLeft;
+                            }
+
+                            pNodeTemp->mColor = pNodeChildParent->mColor;
+                            pNodeChildParent->mColor = kRBTreeColorBlack;
+
+                            if (pNodeTemp->mpNodeLeft)
+                                pNodeTemp->mpNodeLeft->mColor = kRBTreeColorBlack;
+
+                            pNodeRootRef = RBTreeRotateRight(pNodeChildParent, pNodeRootRef);
+                            break;
+                        }
+                    }
+                }
+
+                if (pNodeChild)
+                    pNodeChild->mColor = kRBTreeColorBlack;
+            }
+
+        } // RBTreeErase
+
     }; // rbtree
 
-
-
-
-
-       ///////////////////////////////////////////////////////////////////////
-       // rbtree_node_base functions
-       ///////////////////////////////////////////////////////////////////////
-
-    EASTL_API inline rbtree_node_base* RBTreeGetMinChild(const rbtree_node_base* pNodeBase)
-    {
-        while (pNodeBase->mpNodeLeft)
-            pNodeBase = pNodeBase->mpNodeLeft;
-        return const_cast<rbtree_node_base*>(pNodeBase);
-    }
-
-    EASTL_API inline rbtree_node_base* RBTreeGetMaxChild(const rbtree_node_base* pNodeBase)
-    {
-        while (pNodeBase->mpNodeRight)
-            pNodeBase = pNodeBase->mpNodeRight;
-        return const_cast<rbtree_node_base*>(pNodeBase);
-    }
 
     // The rest of the functions are non-trivial and are found in 
     // the corresponding .cpp file to this file.
@@ -1384,112 +1807,6 @@ namespace easy
         return const_iterator(const_cast<rbtree_type*>(this)->upper_bound(key));
     }
 
-
-    // To do: Move this validate function entirely to a template-less implementation.
-    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
-    bool rbtree<K, V, C, E, bM, bU>::validate() const
-    {
-        // Red-black trees have the following canonical properties which we validate here:
-        //   1 Every node is either red or black.
-        //   2 Every leaf (NULL) is black by defintion. Any number of black nodes may appear in a sequence. 
-        //   3 If a node is red, then both its children are black. Thus, on any path from 
-        //     the root to a leaf, red nodes must not be adjacent.
-        //   4 Every simple path from a node to a descendant leaf contains the same number of black nodes.
-        //   5 The mnSize member of the tree must equal the number of nodes in the tree.
-        //   6 The tree is sorted as per a conventional binary tree.
-        //   7 The comparison function is sane; it obeys strict weak ordering. If mCompare(a,b) is true, then mCompare(b,a) must be false. Both cannot be true.
-
-        extract_key extractKey;
-
-        if (mnSize)
-        {
-            // Verify basic integrity.
-            //if(!mAnchor.mpNodeParent || (mAnchor.mpNodeLeft == mAnchor.mpNodeRight))
-            //    return false;             // Fix this for case of empty tree.
-
-            if (mAnchor.mpNodeLeft != RBTreeGetMinChild(mAnchor.mpNodeParent))
-                return false;
-
-            if (mAnchor.mpNodeRight != RBTreeGetMaxChild(mAnchor.mpNodeParent))
-                return false;
-
-            const unsigned int nBlackCount = RBTreeGetBlackCount(mAnchor.mpNodeParent, mAnchor.mpNodeLeft);
-            unsigned int   nIteratedSize = 0;
-
-            for (const_iterator it = begin(); it != end(); ++it, ++nIteratedSize)
-            {
-                const node_type* const pNode = (const node_type*)it.mpNode;
-                const node_type* const pNodeRight = (const node_type*)pNode->mpNodeRight;
-                const node_type* const pNodeLeft = (const node_type*)pNode->mpNodeLeft;
-
-                // Verify #7 above.
-                if (pNodeRight && mCompare(extractKey(pNodeRight->mValue), extractKey(pNode->mValue)) && mCompare(extractKey(pNode->mValue), extractKey(pNodeRight->mValue))) // Validate that the compare function is sane.
-                    return false;
-
-                // Verify #7 above.
-                if (pNodeLeft && mCompare(extractKey(pNodeLeft->mValue), extractKey(pNode->mValue)) && mCompare(extractKey(pNode->mValue), extractKey(pNodeLeft->mValue))) // Validate that the compare function is sane.
-                    return false;
-
-                // Verify item #1 above.
-                if ((pNode->mColor != kRBTreeColorRed) && (pNode->mColor != kRBTreeColorBlack))
-                    return false;
-
-                // Verify item #3 above.
-                if (pNode->mColor == kRBTreeColorRed)
-                {
-                    if ((pNodeRight && (pNodeRight->mColor == kRBTreeColorRed)) ||
-                        (pNodeLeft && (pNodeLeft->mColor == kRBTreeColorRed)))
-                        return false;
-                }
-
-                // Verify item #6 above.
-                if (pNodeRight && mCompare(extractKey(pNodeRight->mValue), extractKey(pNode->mValue)))
-                    return false;
-
-                if (pNodeLeft && mCompare(extractKey(pNode->mValue), extractKey(pNodeLeft->mValue)))
-                    return false;
-
-                if (!pNodeRight && !pNodeLeft) // If we are at a bottom node of the tree...
-                {
-                    // Verify item #4 above.
-                    if (RBTreeGetBlackCount(mAnchor.mpNodeParent, pNode) != nBlackCount)
-                        return false;
-                }
-            }
-
-            // Verify item #5 above.
-            if (nIteratedSize != mnSize)
-                return false;
-
-            return true;
-        } else
-        {
-            if ((mAnchor.mpNodeLeft != &mAnchor) || (mAnchor.mpNodeRight != &mAnchor))
-                return false;
-        }
-
-        return true;
-    }
-
-
-    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
-    inline int rbtree<K, V, C, E, bM, bU>::validate_iterator(const_iterator i) const
-    {
-        // To do: Come up with a more efficient mechanism of doing this.
-
-        for (const_iterator temp = begin(), tempEnd = end(); temp != tempEnd; ++temp)
-        {
-            if (temp == i)
-                return (isf_valid | isf_current | isf_can_dereference);
-        }
-
-        if (i == end())
-            return (isf_valid | isf_current);
-
-        return isf_none;
-    }
-
-
     template <typename K, typename V, typename C, typename E, bool bM, bool bU>
     inline void rbtree<K, V, C, E, bM, bU>::DoFreeNode(node_type* pNode)
     {
@@ -1500,7 +1817,8 @@ namespace easy
     typename rbtree<K, V, C, E, bM, bU>::node_type*
         rbtree<K, V, C, E, bM, bU>::DoCreateNode(const value_type& value)
     {
-        node_type* const pNode =new value_type(value);
+        node_type* const pNode = new node_type();
+        pNode->mValue=value;
 
         return pNode;
     }

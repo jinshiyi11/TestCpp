@@ -1,4 +1,5 @@
 #pragma once
+#include "Map.h"
 class TestEasyMap
 {
 public:
@@ -6,5 +7,9 @@ public:
     ~TestEasyMap();
 
     static void main();
+
+private:
+    template<typename T>
+    static void print(const T& t);
 };
 

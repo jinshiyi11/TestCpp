@@ -30,6 +30,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)functor\TestBind.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Map.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)RbTree.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Set.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\Light.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\sigslot.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\Switch.h" />

@@ -55,5 +55,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Map.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)RbTree.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestEasyMap.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Set.h" />
   </ItemGroup>
 </Project>

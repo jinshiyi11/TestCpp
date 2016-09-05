@@ -19,8 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AndroidTest.NativeActivity"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		TestCpp\TestCpp.Shared\TestCpp.Shared.vcxitems*{fcaa5a09-bcc3-4c0a-9e2c-c74dd683ed34}*SharedItemsImports = 4
 		TestCpp\TestCpp.Shared\TestCpp.Shared.vcxitems*{2524ddf7-9c23-444f-b8ee-65e5a50ce708}*SharedItemsImports = 4
-		TestCpp\TestCpp.Shared\TestCpp.Shared.vcxitems*{9cef2ca7-16c2-4f7b-ab54-696f60f1f111}*SharedItemsImports = 4
 		TestCpp\TestCpp.Shared\TestCpp.Shared.vcxitems*{dac67ae9-eafe-495e-bf9e-336b75497ebc}*SharedItemsImports = 4
 		TestCpp\TestCpp.Shared\TestCpp.Shared.vcxitems*{8c230463-3223-4721-834d-81b8b31c78c1}*SharedItemsImports = 9
 	EndGlobalSection

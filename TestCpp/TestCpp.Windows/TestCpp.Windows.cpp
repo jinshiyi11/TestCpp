@@ -26,8 +26,10 @@ int main()
     //map1.insert(std::make_pair(1, 2));
 
     //eastl::pair
-    eastl::map<int,int> map2;
-    map2.insert(eastl::make_pair(2,3));
+    //eastl::map<int,int> map2;
+    //map2.insert(eastl::make_pair(2,3));
+
+    TestEasyMap::main();
 
     TestVirtualDestructor::main();
     std::u16string us1 = u"aaa";

@@ -15,6 +15,8 @@
  *
 */
 
+#include "TestEasyMap.h"
+
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "AndroidProject1.NativeActivity", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "AndroidProject1.NativeActivity", __VA_ARGS__))
 
@@ -222,6 +224,8 @@ void test() {
 * 事件循环用于接收输入事件并执行其他操作。
 */
 void android_main(struct android_app* state) {
+    TestEasyMap::main();
+
 	struct engine engine;
 
 	memset(&engine, 0, sizeof(engine));
