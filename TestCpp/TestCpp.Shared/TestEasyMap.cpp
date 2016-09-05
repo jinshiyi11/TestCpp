@@ -15,4 +15,6 @@ void TestEasyMap::main()
 {
     easy::map<int, int> myMap;
 
+    myMap.insert(easy::make_pair(1, 2));
+
 }

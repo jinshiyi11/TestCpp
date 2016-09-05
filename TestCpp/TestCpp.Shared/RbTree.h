@@ -25,6 +25,10 @@
 #endif
 #endif
 
+#ifndef NULL
+#define NULL    0
+#endif
+
 #define EASY_LIKELY(x)   (x)
 #define EASY_VALIDATE_COMPARE(expression)
 
@@ -66,6 +70,12 @@ namespace easy
             : first(),
             second() {}
     };
+
+    template <typename T1, typename T2>
+    inline pair<T1, T2> make_pair(T1 a, T2 b)
+    {
+        return eastl::pair<T1, T2>(a, b);
+    }
 
     // type_select
     //
@@ -402,11 +412,11 @@ namespace easy
     /// type other than the tree's key type. See the find_as function
     /// for more documentation on this.
     ///
-    template <typename Key, typename Value, typename Compare, typename Allocator,
+    template <typename Key, typename Value, typename Compare,
         typename ExtractKey, bool bMutableIterators, bool bUniqueKeys>
     class rbtree
         : public rb_base<Key, Value, Compare, ExtractKey, bUniqueKeys,
-        rbtree<Key, Value, Compare, Allocator, ExtractKey, bMutableIterators, bUniqueKeys> >
+        rbtree<Key, Value, Compare, ExtractKey, bMutableIterators, bUniqueKeys> >
     {
     public:
         typedef int                                                                             difference_type;
@@ -424,10 +434,9 @@ namespace easy
             rbtree_iterator<value_type, const value_type*, const value_type&> >::type   iterator;
         typedef rbtree_iterator<value_type, const value_type*, const value_type&>               const_iterator;
 
-        typedef Allocator                                                                       allocator_type;
         typedef Compare                                                                         key_compare;
         typedef typename type_select<bUniqueKeys, easy::pair<iterator, bool>, iterator>::type  insert_return_type;  // map/set::insert return a pair, multimap/multiset::iterator return an iterator.
-        typedef rbtree<Key, Value, Compare, Allocator,
+        typedef rbtree<Key, Value, Compare,
             ExtractKey, bMutableIterators, bUniqueKeys>                             this_type;
         typedef rb_base<Key, Value, Compare, ExtractKey, bUniqueKeys, this_type>                base_type;
         typedef integral_constant<bool, bUniqueKeys>                                            has_unique_keys_type;
@@ -438,26 +447,20 @@ namespace easy
     public:
         rbtree_node_base  mAnchor;      /// This node acts as end() and its mpLeft points to begin(), and mpRight points to rbegin() (the last node on the right).
         size_type         mnSize;       /// Stores the count of nodes in the tree (not counting the anchor node).
-        allocator_type    mAllocator;   // To do: Use base class optimization to make this go away.
 
     public:
         // ctor/dtor
         rbtree();
-        rbtree(const allocator_type& allocator);
-        rbtree(const Compare& compare, const allocator_type& allocator = EASTL_RBTREE_DEFAULT_ALLOCATOR);
+        rbtree(const Compare& compare);
         rbtree(const this_type& x);
 
         template <typename InputIterator>
-        rbtree(InputIterator first, InputIterator last, const Compare& compare, const allocator_type& allocator = EASTL_RBTREE_DEFAULT_ALLOCATOR);
+        rbtree(InputIterator first, InputIterator last, const Compare& compare);
 
         ~rbtree();
 
     public:
         // properties
-        const allocator_type& get_allocator() const ;
-        allocator_type&       get_allocator() ;
-        void                  set_allocator(const allocator_type& allocator);
-
         const key_compare& key_comp() const { return mCompare; }
         key_compare&       key_comp() { return mCompare; }
 
@@ -541,7 +544,6 @@ namespace easy
         int  validate_iterator(const_iterator i) const;
 
     protected:
-        node_type* DoAllocateNode();
         void       DoFreeNode(node_type* pNode);
 
         node_type* DoCreateNode(const value_type& value);
@@ -700,43 +702,29 @@ namespace easy
     // rbtree functions
     ///////////////////////////////////////////////////////////////////////
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline rbtree<K, V, C, A, E, bM, bU>::rbtree()
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline rbtree<K, V, C, E, bM, bU>::rbtree()
         : mAnchor(),
-        mnSize(0),
-        mAllocator(EASTL_RBTREE_DEFAULT_NAME)
+        mnSize(0)
     {
         reset_lose_memory();
     }
 
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline rbtree<K, V, C, A, E, bM, bU>::rbtree(const allocator_type& allocator)
-        : mAnchor(),
-        mnSize(0),
-        mAllocator(allocator)
-    {
-        reset_lose_memory();
-    }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline rbtree<K, V, C, A, E, bM, bU>::rbtree(const C& compare, const allocator_type& allocator)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline rbtree<K, V, C, E, bM, bU>::rbtree(const C& compare)
         : base_type(compare),
         mAnchor(),
-        mnSize(0),
-        mAllocator(allocator)
+        mnSize(0)
     {
         reset_lose_memory();
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline rbtree<K, V, C, A, E, bM, bU>::rbtree(const this_type& x)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline rbtree<K, V, C, E, bM, bU>::rbtree(const this_type& x)
         : base_type(x.mCompare),
         mAnchor(),
-        mnSize(0),
-        mAllocator(x.mAllocator)
+        mnSize(0)
     {
         reset_lose_memory();
 
@@ -750,13 +738,12 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
     template <typename InputIterator>
-    inline rbtree<K, V, C, A, E, bM, bU>::rbtree(InputIterator first, InputIterator last, const C& compare, const allocator_type& allocator)
+    inline rbtree<K, V, C, E, bM, bU>::rbtree(InputIterator first, InputIterator last, const C& compare)
         : base_type(compare),
         mAnchor(),
-        mnSize(0),
-        mAllocator(allocator)
+        mnSize(0)
     {
         reset_lose_memory();
 
@@ -765,8 +752,8 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline rbtree<K, V, C, A, E, bM, bU>::~rbtree()
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline rbtree<K, V, C, E, bM, bU>::~rbtree()
     {
         // Erase the entire tree. DoNukeSubtree is not a 
         // conventional erase function, as it does no rebalancing.
@@ -774,102 +761,75 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline const typename rbtree<K, V, C, A, E, bM, bU>::allocator_type&
-        rbtree<K, V, C, A, E, bM, bU>::get_allocator() const 
-    {
-        return mAllocator;
-    }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::allocator_type&
-        rbtree<K, V, C, A, E, bM, bU>::get_allocator() 
-    {
-        return mAllocator;
-    }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline void rbtree<K, V, C, A, E, bM, bU>::set_allocator(const allocator_type& allocator)
-    {
-        mAllocator = allocator;
-    }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::size_type
-        rbtree<K, V, C, A, E, bM, bU>::size() const 
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::size_type
+        rbtree<K, V, C, E, bM, bU>::size() const 
     {
         return mnSize;
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline bool rbtree<K, V, C, A, E, bM, bU>::empty() const 
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline bool rbtree<K, V, C, E, bM, bU>::empty() const 
     {
         return (mnSize == 0);
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::begin() 
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::begin() 
     {
         return iterator(static_cast<node_type*>(mAnchor.mpNodeLeft));
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::const_iterator
-        rbtree<K, V, C, A, E, bM, bU>::begin() const 
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::const_iterator
+        rbtree<K, V, C, E, bM, bU>::begin() const 
     {
         return const_iterator(static_cast<node_type*>(const_cast<rbtree_node_base*>(mAnchor.mpNodeLeft)));
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::const_iterator
-        rbtree<K, V, C, A, E, bM, bU>::cbegin() const 
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::const_iterator
+        rbtree<K, V, C, E, bM, bU>::cbegin() const 
     {
         return const_iterator(static_cast<node_type*>(const_cast<rbtree_node_base*>(mAnchor.mpNodeLeft)));
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::end() 
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::end() 
     {
         return iterator(static_cast<node_type*>(&mAnchor));
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::const_iterator
-        rbtree<K, V, C, A, E, bM, bU>::end() const 
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::const_iterator
+        rbtree<K, V, C, E, bM, bU>::end() const 
     {
         return const_iterator(static_cast<node_type*>(const_cast<rbtree_node_base*>(&mAnchor)));
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::const_iterator
-        rbtree<K, V, C, A, E, bM, bU>::cend() const 
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::const_iterator
+        rbtree<K, V, C, E, bM, bU>::cend() const 
     {
         return const_iterator(static_cast<node_type*>(const_cast<rbtree_node_base*>(&mAnchor)));
     }
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::this_type&
-        rbtree<K, V, C, A, E, bM, bU>::operator=(const this_type& x)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::this_type&
+        rbtree<K, V, C, E, bM, bU>::operator=(const this_type& x)
     {
         if (this != &x)
         {
             clear();
-
-#if EASTL_ALLOCATOR_COPY_ENABLED
-            mAllocator = x.mAllocator;
-#endif
 
             base_type::mCompare = x.mCompare;
 
@@ -885,83 +845,34 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    void rbtree<K, V, C, A, E, bM, bU>::swap(this_type& x)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    void rbtree<K, V, C, E, bM, bU>::swap(this_type& x)
     {
-        if (mAllocator == x.mAllocator) // If allocators are equivalent...
-        {
-            // Most of our members can be exchaged by a basic swap:
-            // We leave mAllocator as-is.
-            easy::swap(mnSize, x.mnSize);
-            easy::swap(base_type::mCompare, x.mCompare);
-
-            // However, because our anchor node is a part of our class instance and not 
-            // dynamically allocated, we can't do a swap of it but must do a more elaborate
-            // procedure. This is the downside to having the mAnchor be like this, but 
-            // otherwise we consider it a good idea to avoid allocating memory for a 
-            // nominal container instance.
-
-            // We optimize for the expected most common case: both pointers being non-null.
-            if (mAnchor.mpNodeParent && x.mAnchor.mpNodeParent) // If both pointers are non-null...
-            {
-                easy::swap(mAnchor.mpNodeRight, x.mAnchor.mpNodeRight);
-                easy::swap(mAnchor.mpNodeLeft, x.mAnchor.mpNodeLeft);
-                easy::swap(mAnchor.mpNodeParent, x.mAnchor.mpNodeParent);
-
-                // We need to fix up the anchors to point to themselves (we can't just swap them).
-                mAnchor.mpNodeParent->mpNodeParent = &mAnchor;
-                x.mAnchor.mpNodeParent->mpNodeParent = &x.mAnchor;
-            } else if (mAnchor.mpNodeParent)
-            {
-                x.mAnchor.mpNodeRight = mAnchor.mpNodeRight;
-                x.mAnchor.mpNodeLeft = mAnchor.mpNodeLeft;
-                x.mAnchor.mpNodeParent = mAnchor.mpNodeParent;
-                x.mAnchor.mpNodeParent->mpNodeParent = &x.mAnchor;
-
-                // We need to fix up our anchor to point it itself (we can't have it swap with x).
-                mAnchor.mpNodeRight = &mAnchor;
-                mAnchor.mpNodeLeft = &mAnchor;
-                mAnchor.mpNodeParent = NULL;
-            } else if (x.mAnchor.mpNodeParent)
-            {
-                mAnchor.mpNodeRight = x.mAnchor.mpNodeRight;
-                mAnchor.mpNodeLeft = x.mAnchor.mpNodeLeft;
-                mAnchor.mpNodeParent = x.mAnchor.mpNodeParent;
-                mAnchor.mpNodeParent->mpNodeParent = &mAnchor;
-
-                // We need to fix up x's anchor to point it itself (we can't have it swap with us).
-                x.mAnchor.mpNodeRight = &x.mAnchor;
-                x.mAnchor.mpNodeLeft = &x.mAnchor;
-                x.mAnchor.mpNodeParent = NULL;
-            } // Else both are NULL and there is nothing to do.
-        } else
-        {
-            const this_type temp(*this); // Can't call easy::swap because that would
-            *this = x;                   // itself call this member swap function.
-            x = temp;
-        }
+        const this_type temp(*this); // Can't call easy::swap because that would
+        *this = x;                   // itself call this member swap function.
+        x = temp;
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::insert_return_type // map/set::insert return a pair, multimap/multiset::iterator return an iterator.
-        rbtree<K, V, C, A, E, bM, bU>::insert(const value_type& value)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::insert_return_type // map/set::insert return a pair, multimap/multiset::iterator return an iterator.
+        rbtree<K, V, C, E, bM, bU>::insert(const value_type& value)
     {
         return DoInsertValue(has_unique_keys_type(), value);
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::insert(const_iterator position, const value_type& value)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::insert(const_iterator position, const value_type& value)
     {
         return DoInsertValueHint(has_unique_keys_type(), position, value);
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoGetKeyInsertionPositionUniqueKeys(bool& canInsert, const key_type& key)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::node_type*
+        rbtree<K, V, C, E, bM, bU>::DoGetKeyInsertionPositionUniqueKeys(bool& canInsert, const key_type& key)
     {
         // This code is essentially a slightly modified copy of the the rbtree::insert 
         // function whereby this version takes a key and not a full value_type.
@@ -1019,9 +930,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoGetKeyInsertionPositionNonuniqueKeys(const key_type& key)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::node_type*
+        rbtree<K, V, C, E, bM, bU>::DoGetKeyInsertionPositionNonuniqueKeys(const key_type& key)
     {
         // This is the pathway for insertion of non-unique keys (multimap and multiset, but not map and set).
         node_type* pCurrent = (node_type*)mAnchor.mpNodeParent; // Start with the root node.
@@ -1044,9 +955,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    easy::pair<typename rbtree<K, V, C, A, E, bM, bU>::iterator, bool>
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertValue(true_type, const value_type& value) // true_type means keys are unique.
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    easy::pair<typename rbtree<K, V, C, E, bM, bU>::iterator, bool>
+        rbtree<K, V, C, E, bM, bU>::DoInsertValue(true_type, const value_type& value) // true_type means keys are unique.
     {
         extract_key extractKey;
         key_type    key(extractKey(value));
@@ -1063,9 +974,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertValue(false_type, const value_type& value) // false_type means keys are not unique.
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::DoInsertValue(false_type, const value_type& value) // false_type means keys are not unique.
     {
         extract_key extractKey;
         key_type    key(extractKey(value));
@@ -1075,9 +986,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertValueImpl(node_type* pNodeParent, bool bForceToLeft, const key_type& key, const value_type& value)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::DoInsertValueImpl(node_type* pNodeParent, bool bForceToLeft, const key_type& key, const value_type& value)
     {
         RBTreeSide  side;
         extract_key extractKey;
@@ -1098,9 +1009,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoGetKeyInsertionPositionUniqueKeysHint(const_iterator position, bool& bForceToLeft, const key_type& key)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::node_type*
+        rbtree<K, V, C, E, bM, bU>::DoGetKeyInsertionPositionUniqueKeysHint(const_iterator position, bool& bForceToLeft, const key_type& key)
     {
         extract_key extractKey;
 
@@ -1151,9 +1062,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoGetKeyInsertionPositionNonuniqueKeysHint(const_iterator position, bool& bForceToLeft, const key_type& key)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::node_type*
+        rbtree<K, V, C, E, bM, bU>::DoGetKeyInsertionPositionNonuniqueKeysHint(const_iterator position, bool& bForceToLeft, const key_type& key)
     {
         extract_key extractKey;
 
@@ -1195,9 +1106,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertValueHint(true_type, const_iterator position, const value_type& value) // true_type means keys are unique.
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::DoInsertValueHint(true_type, const_iterator position, const value_type& value) // true_type means keys are unique.
     {
         // This is the pathway for insertion of unique keys (map and set, but not multimap and multiset).
         //
@@ -1216,9 +1127,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertValueHint(false_type, const_iterator position, const value_type& value) // false_type means keys are not unique.
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::DoInsertValueHint(false_type, const_iterator position, const value_type& value) // false_type means keys are not unique.
     {
         // This is the pathway for insertion of non-unique keys (multimap and multiset, but not map and set).
         //
@@ -1236,17 +1147,17 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
     template <typename InputIterator>
-    void rbtree<K, V, C, A, E, bM, bU>::insert(InputIterator first, InputIterator last)
+    void rbtree<K, V, C, E, bM, bU>::insert(InputIterator first, InputIterator last)
     {
         for (; first != last; ++first)
             DoInsertValue(has_unique_keys_type(), *first); // Or maybe we should call 'insert(end(), *first)' instead. If the first-last range was sorted then this might make some sense.
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline void rbtree<K, V, C, A, E, bM, bU>::clear()
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline void rbtree<K, V, C, E, bM, bU>::clear()
     {
         // Erase the entire tree. DoNukeSubtree is not a 
         // conventional erase function, as it does no rebalancing.
@@ -1254,8 +1165,8 @@ namespace easy
         reset_lose_memory();
     }
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline void rbtree<K, V, C, A, E, bM, bU>::reset_lose_memory()
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline void rbtree<K, V, C, E, bM, bU>::reset_lose_memory()
     {
         // The reset_lose_memory function is a special extension function which unilaterally 
         // resets the container to an empty state without freeing the memory of 
@@ -1269,9 +1180,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::erase(const_iterator position)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::erase(const_iterator position)
     {
         const iterator iErase(position.mpNode);
         --mnSize; // Interleave this between the two references to itNext. We expect no exceptions to occur during the code below.
@@ -1282,9 +1193,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::erase(const_iterator first, const_iterator last)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::erase(const_iterator first, const_iterator last)
     {
         // We expect that if the user means to clear the container, they will call clear.
         if (EASY_LIKELY((first.mpNode != mAnchor.mpNodeLeft) || (last.mpNode != &mAnchor))) // If (first != begin or last != end) ...
@@ -1313,8 +1224,8 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline void rbtree<K, V, C, A, E, bM, bU>::erase(const key_type* first, const key_type* last)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline void rbtree<K, V, C, E, bM, bU>::erase(const key_type* first, const key_type* last)
     {
         // We have no choice but to run a loop like this, as the first/last range could
         // have values that are discontiguously located in the tree. And some may not 
@@ -1324,9 +1235,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::find(const key_type& key)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::find(const key_type& key)
     {
         // To consider: Implement this instead via calling lower_bound and 
         // inspecting the result. The following is an implementation of this:
@@ -1358,19 +1269,19 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::const_iterator
-        rbtree<K, V, C, A, E, bM, bU>::find(const key_type& key) const
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::const_iterator
+        rbtree<K, V, C, E, bM, bU>::find(const key_type& key) const
     {
-        typedef rbtree<K, V, C, A, E, bM, bU> rbtree_type;
+        typedef rbtree<K, V, C, E, bM, bU> rbtree_type;
         return const_iterator(const_cast<rbtree_type*>(this)->find(key));
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
     template <typename U, typename Compare2>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::find_as(const U& u, Compare2 compare2)
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::find_as(const U& u, Compare2 compare2)
     {
         extract_key extractKey;
 
@@ -1396,19 +1307,19 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
     template <typename U, typename Compare2>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::const_iterator
-        rbtree<K, V, C, A, E, bM, bU>::find_as(const U& u, Compare2 compare2) const
+    inline typename rbtree<K, V, C, E, bM, bU>::const_iterator
+        rbtree<K, V, C, E, bM, bU>::find_as(const U& u, Compare2 compare2) const
     {
-        typedef rbtree<K, V, C, A, E, bM, bU> rbtree_type;
+        typedef rbtree<K, V, C, E, bM, bU> rbtree_type;
         return const_iterator(const_cast<rbtree_type*>(this)->find_as(u, compare2));
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::lower_bound(const key_type& key)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::lower_bound(const key_type& key)
     {
         extract_key extractKey;
 
@@ -1432,18 +1343,18 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::const_iterator
-        rbtree<K, V, C, A, E, bM, bU>::lower_bound(const key_type& key) const
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::const_iterator
+        rbtree<K, V, C, E, bM, bU>::lower_bound(const key_type& key) const
     {
-        typedef rbtree<K, V, C, A, E, bM, bU> rbtree_type;
+        typedef rbtree<K, V, C, E, bM, bU> rbtree_type;
         return const_iterator(const_cast<rbtree_type*>(this)->lower_bound(key));
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::upper_bound(const key_type& key)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::iterator
+        rbtree<K, V, C, E, bM, bU>::upper_bound(const key_type& key)
     {
         extract_key extractKey;
 
@@ -1465,18 +1376,18 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::const_iterator
-        rbtree<K, V, C, A, E, bM, bU>::upper_bound(const key_type& key) const
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline typename rbtree<K, V, C, E, bM, bU>::const_iterator
+        rbtree<K, V, C, E, bM, bU>::upper_bound(const key_type& key) const
     {
-        typedef rbtree<K, V, C, A, E, bM, bU> rbtree_type;
+        typedef rbtree<K, V, C, E, bM, bU> rbtree_type;
         return const_iterator(const_cast<rbtree_type*>(this)->upper_bound(key));
     }
 
 
     // To do: Move this validate function entirely to a template-less implementation.
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    bool rbtree<K, V, C, A, E, bM, bU>::validate() const
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    bool rbtree<K, V, C, E, bM, bU>::validate() const
     {
         // Red-black trees have the following canonical properties which we validate here:
         //   1 Every node is either red or black.
@@ -1561,8 +1472,8 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline int rbtree<K, V, C, A, E, bM, bU>::validate_iterator(const_iterator i) const
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline int rbtree<K, V, C, E, bM, bU>::validate_iterator(const_iterator i) const
     {
         // To do: Come up with a more efficient mechanism of doing this.
 
@@ -1579,40 +1490,24 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoAllocateNode()
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline void rbtree<K, V, C, E, bM, bU>::DoFreeNode(node_type* pNode)
     {
-        auto* pNode = (node_type*)allocate_memory(mAllocator, sizeof(node_type), EASTL_ALIGN_OF(value_type), 0);
+        delete pNode;
+    }
+
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::node_type*
+        rbtree<K, V, C, E, bM, bU>::DoCreateNode(const value_type& value)
+    {
+        node_type* const pNode =new value_type(value);
 
         return pNode;
     }
 
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    inline void rbtree<K, V, C, A, E, bM, bU>::DoFreeNode(node_type* pNode)
-    {
-        pNode->~node_type();
-        EASTLFree(mAllocator, pNode, sizeof(node_type));
-    }
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoCreateNode(const value_type& value)
-    {
-        // Note that this function intentionally leaves the node pointers uninitialized.
-        // The caller would otherwise just turn right around and modify them, so there's
-        // no point in us initializing them to anything (except in a debug build).
-        node_type* const pNode = DoAllocateNode();
-
-        ::new((void*)&pNode->mValue) value_type(value);
-
-        return pNode;
-    }
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoCreateNode(const node_type* pNodeSource, node_type* pNodeParent)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::node_type*
+        rbtree<K, V, C, E, bM, bU>::DoCreateNode(const node_type* pNodeSource, node_type* pNodeParent)
     {
         node_type* const pNode = DoCreateNode(pNodeSource->mValue);
 
@@ -1625,9 +1520,9 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoCopySubtree(const node_type* pNodeSource, node_type* pNodeDest)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    typename rbtree<K, V, C, E, bM, bU>::node_type*
+        rbtree<K, V, C, E, bM, bU>::DoCopySubtree(const node_type* pNodeSource, node_type* pNodeDest)
     {
         node_type* const pNewNodeRoot = DoCreateNode(pNodeSource, pNodeDest);
 
@@ -1654,8 +1549,8 @@ namespace easy
     }
 
 
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    void rbtree<K, V, C, A, E, bM, bU>::DoNukeSubtree(node_type* pNode)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    void rbtree<K, V, C, E, bM, bU>::DoNukeSubtree(node_type* pNode)
     {
         while (pNode) // Recursively traverse the tree and destroy items as we go.
         {
@@ -1673,8 +1568,8 @@ namespace easy
     // global operators
     ///////////////////////////////////////////////////////////////////////
 
-    template <typename K, typename V, typename A, typename C, typename E, bool bM, bool bU>
-    inline void swap(rbtree<K, V, C, A, E, bM, bU>& a, rbtree<K, V, C, A, E, bM, bU>& b)
+    template <typename K, typename V, typename C, typename E, bool bM, bool bU>
+    inline void swap(rbtree<K, V, C, E, bM, bU>& a, rbtree<K, V, C, E, bM, bU>& b)
     {
         a.swap(b);
     }

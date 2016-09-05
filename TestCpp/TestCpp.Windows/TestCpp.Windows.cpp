@@ -20,6 +20,7 @@
 
 int main()
 {
+    //std::make_pair(1, 2);
 
     //std::map<int, int> map1;
     //map1.insert(std::make_pair(1, 2));

@@ -22,14 +22,14 @@ namespace easy {
     ///     MemoryPool myPool(sizeof(WidgetMap::node_type), 100);          // Make a pool of 100 Widget nodes.
     ///     WidgetMap myMap(&myPool);                                      // Create a map that uses the pool.
     ///
-    template <typename Key, typename T, typename Compare = easy::less<Key>, typename Allocator = EASTLAllocatorType>
+    template <typename Key, typename T, typename Compare = easy::less<Key> >
     class map
-        : public rbtree<Key, easy::pair<const Key, T>, Compare, Allocator, easy::use_first<easy::pair<const Key, T> >, true, true>
+        : public rbtree<Key, easy::pair<const Key, T>, Compare, easy::use_first<easy::pair<const Key, T> >, true, true>
     {
     public:
-        typedef rbtree<Key, easy::pair<const Key, T>, Compare, Allocator,
+        typedef rbtree<Key, easy::pair<const Key, T>, Compare,
             easy::use_first<easy::pair<const Key, T> >, true, true>   base_type;
-        typedef map<Key, T, Compare, Allocator>                                     this_type;
+        typedef map<Key, T, Compare>                                     this_type;
         typedef typename base_type::size_type                                       size_type;
         typedef typename base_type::key_type                                        key_type;
         typedef T                                                                   mapped_type;
@@ -37,7 +37,6 @@ namespace easy {
         typedef typename base_type::node_type                                       node_type;
         typedef typename base_type::iterator                                        iterator;
         typedef typename base_type::const_iterator                                  const_iterator;
-        typedef typename base_type::allocator_type                                  allocator_type;
         typedef typename base_type::insert_return_type                              insert_return_type;
         typedef typename base_type::extract_key                                     extract_key;
         // Other types are inherited from the base class.
@@ -70,21 +69,14 @@ namespace easy {
         };
 
     public:
-        map(const allocator_type& allocator = EASTL_MAP_DEFAULT_ALLOCATOR);
-        map(const Compare& compare, const allocator_type& allocator = EASTL_MAP_DEFAULT_ALLOCATOR);
+        map();
+        map(const Compare& compare);
         map(const this_type& x);
 
         template <typename Iterator>
         map(Iterator itBegin, Iterator itEnd); // allocator arg removed because VC7.1 fails on the default arg. To consider: Make a second version of this function without a default arg.
 
     public:
-        /// This is an extension to the C++ standard. We insert a default-constructed 
-        /// element with the given key. The reason for this is that we can avoid the 
-        /// potentially expensive operation of creating and/or copying a mapped_type
-        /// object on the stack. Note that C++11 move insertions and variadic emplace
-        /// support make this extension mostly no longer necessary.
-        insert_return_type insert(const Key& key);
-
         value_compare value_comp() const;
 
         size_type erase(const Key& key);
@@ -99,53 +91,45 @@ namespace easy {
     // map
     ///////////////////////////////////////////////////////////////////////
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline map<Key, T, Compare, Allocator>::map(const allocator_type& allocator)
-        : base_type(allocator)
+    template <typename Key, typename T, typename Compare>
+    inline map<Key, T, Compare>::map()
+        : base_type()
     {
     }
 
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline map<Key, T, Compare, Allocator>::map(const Compare& compare, const allocator_type& allocator)
-        : base_type(compare, allocator)
+    template <typename Key, typename T, typename Compare>
+    inline map<Key, T, Compare>::map(const Compare& compare)
+        : base_type(compare)
     {
     }
 
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline map<Key, T, Compare, Allocator>::map(const this_type& x)
+    template <typename Key, typename T, typename Compare>
+    inline map<Key, T, Compare>::map(const this_type& x)
         : base_type(x)
     {
     }
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
+    template <typename Key, typename T, typename Compare>
     template <typename Iterator>
-    inline map<Key, T, Compare, Allocator>::map(Iterator itBegin, Iterator itEnd)
-        : base_type(itBegin, itEnd, Compare(), EASTL_MAP_DEFAULT_ALLOCATOR)
+    inline map<Key, T, Compare>::map(Iterator itBegin, Iterator itEnd)
+        : base_type(itBegin, itEnd, Compare())
     {
     }
 
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline typename map<Key, T, Compare, Allocator>::insert_return_type
-        map<Key, T, Compare, Allocator>::insert(const Key& key)
-    {
-        return base_type::DoInsertKey(true_type(), key);
-    }
-
-
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline typename map<Key, T, Compare, Allocator>::value_compare
-        map<Key, T, Compare, Allocator>::value_comp() const
+    template <typename Key, typename T, typename Compare>
+    inline typename map<Key, T, Compare>::value_compare
+        map<Key, T, Compare>::value_comp() const
     {
         return value_compare(mCompare);
     }
 
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline typename map<Key, T, Compare, Allocator>::size_type
-        map<Key, T, Compare, Allocator>::erase(const Key& key)
+    template <typename Key, typename T, typename Compare>
+    inline typename map<Key, T, Compare>::size_type
+        map<Key, T, Compare>::erase(const Key& key)
     {
         const iterator it(find(key));
 
@@ -158,19 +142,19 @@ namespace easy {
     }
 
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline typename map<Key, T, Compare, Allocator>::size_type
-        map<Key, T, Compare, Allocator>::count(const Key& key) const
+    template <typename Key, typename T, typename Compare>
+    inline typename map<Key, T, Compare>::size_type
+        map<Key, T, Compare>::count(const Key& key) const
     {
         const const_iterator it(find(key));
         return (it != end()) ? 1 : 0;
     }
 
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline easy::pair<typename map<Key, T, Compare, Allocator>::iterator,
-        typename map<Key, T, Compare, Allocator>::iterator>
-        map<Key, T, Compare, Allocator>::equal_range(const Key& key)
+    template <typename Key, typename T, typename Compare>
+    inline easy::pair<typename map<Key, T, Compare>::iterator,
+        typename map<Key, T, Compare>::iterator>
+        map<Key, T, Compare>::equal_range(const Key& key)
     {
         // The resulting range will either be empty or have one element,
         // so instead of doing two tree searches (one for lower_bound and 
@@ -186,10 +170,10 @@ namespace easy {
     }
 
 
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline easy::pair<typename map<Key, T, Compare, Allocator>::const_iterator,
-        typename map<Key, T, Compare, Allocator>::const_iterator>
-        map<Key, T, Compare, Allocator>::equal_range(const Key& key) const
+    template <typename Key, typename T, typename Compare>
+    inline easy::pair<typename map<Key, T, Compare>::const_iterator,
+        typename map<Key, T, Compare>::const_iterator>
+        map<Key, T, Compare>::equal_range(const Key& key) const
     {
         // See equal_range above for comments.
         const const_iterator itLower(lower_bound(key));
