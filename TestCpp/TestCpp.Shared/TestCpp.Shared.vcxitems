@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)functor\TestBind.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)IServiceManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\Light.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\sigslot.cc" />
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\Switch.cpp" />
@@ -28,6 +29,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)functor\TestBind.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)IService.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)IServiceManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Map.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)RbTree.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Set.h" />
