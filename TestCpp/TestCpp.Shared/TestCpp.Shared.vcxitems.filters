@@ -27,6 +27,9 @@
       <Filter>sigslot</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)TestAuto.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestInterface.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestVirtualDestructor.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestEasyMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)functor\TestBind.h">
@@ -47,5 +50,10 @@
       <Filter>sigslot</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)TestAuto.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestInterface.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestVirtualDestructor.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Map.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)RbTree.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestEasyMap.h" />
   </ItemGroup>
 </Project>
