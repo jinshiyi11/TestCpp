@@ -25,6 +25,9 @@
 #endif
 #endif
 
+#define EASY_LIKELY(x)   (x)
+#define EASY_VALIDATE_COMPARE(expression)
+
 namespace easy
 {
     template <typename T, T v>
@@ -166,8 +169,6 @@ namespace easy
         kRBTreeColorBlack
     };
 
-
-
     /// RBTreeColor
     ///
     enum RBTreeSide
@@ -175,8 +176,6 @@ namespace easy
         kRBTreeSideLeft,
         kRBTreeSideRight
     };
-
-
 
     /// rbtree_node_base
     ///
@@ -352,8 +351,6 @@ namespace easy
         rb_base() : mCompare() {}
         rb_base(const Compare& compare) : mCompare(compare) {}
     };
-
-
 
 
 
@@ -547,7 +544,6 @@ namespace easy
         node_type* DoAllocateNode();
         void       DoFreeNode(node_type* pNode);
 
-        node_type* DoCreateNodeFromKey(const key_type& key);
         node_type* DoCreateNode(const value_type& value);
         node_type* DoCreateNode(const node_type* pNodeSource, node_type* pNodeParent);
 
@@ -558,15 +554,8 @@ namespace easy
         iterator DoInsertValue(false_type, const value_type& value);
         iterator DoInsertValueImpl(node_type* pNodeParent, bool bForceToLeft, const key_type& key, const value_type& value);
 
-        easy::pair<iterator, bool> DoInsertKey(true_type, const key_type& key);
-        iterator DoInsertKey(false_type, const key_type& key);
-
         iterator DoInsertValueHint(true_type, const_iterator position, const value_type& value);
         iterator DoInsertValueHint(false_type, const_iterator position, const value_type& value);
-
-        iterator DoInsertKey(true_type, const_iterator position, const key_type& key);  // By design we return iterator and not a pair.
-        iterator DoInsertKey(false_type, const_iterator position, const key_type& key);
-        iterator DoInsertKeyImpl(node_type* pNodeParent, bool bForceToLeft, const key_type& key);
 
         node_type* DoGetKeyInsertionPositionUniqueKeys(bool& canInsert, const key_type& key);
         node_type* DoGetKeyInsertionPositionNonuniqueKeys(const key_type& key);
@@ -987,14 +976,14 @@ namespace easy
                                         // Find insertion position of the value. This will either be a position which 
                                         // already contains the value, a position which is greater than the value or
                                         // end(), which we treat like a position which is greater than the value.
-        while (EASTL_LIKELY(pCurrent)) // Do a walk down the tree.
+        while (EASY_LIKELY(pCurrent)) // Do a walk down the tree.
         {
             bValueLessThanNode = mCompare(key, extractKey(pCurrent->mValue));
             pLowerBound = pCurrent;
 
             if (bValueLessThanNode)
             {
-                EASTL_VALIDATE_COMPARE(!mCompare(extractKey(pCurrent->mValue), key)); // Validate that the compare function is sane.
+                EASY_VALIDATE_COMPARE(!mCompare(extractKey(pCurrent->mValue), key)); // Validate that the compare function is sane.
                 pCurrent = (node_type*)pCurrent->mpNodeLeft;
             } else
                 pCurrent = (node_type*)pCurrent->mpNodeRight;
@@ -1004,7 +993,7 @@ namespace easy
 
         if (bValueLessThanNode) // If we ended up on the left side of the last parent node...
         {
-            if (EASTL_LIKELY(pLowerBound != (node_type*)mAnchor.mpNodeLeft)) // If the tree was empty or if we otherwise need to insert at the very front of the tree...
+            if (EASY_LIKELY(pLowerBound != (node_type*)mAnchor.mpNodeLeft)) // If the tree was empty or if we otherwise need to insert at the very front of the tree...
             {
                 // At this point, pLowerBound points to a node which is > than value.
                 // Move it back by one, so that it points to a node which is <= value.
@@ -1019,7 +1008,7 @@ namespace easy
         // Since here we require values to be unique, we will do nothing if the value already exists.
         if (mCompare(extractKey(pLowerBound->mValue), key)) // If the node is < the value (i.e. if value is >= the node)...
         {
-            EASTL_VALIDATE_COMPARE(!mCompare(key, extractKey(pLowerBound->mValue))); // Validate that the compare function is sane.
+            EASY_VALIDATE_COMPARE(!mCompare(key, extractKey(pLowerBound->mValue))); // Validate that the compare function is sane.
             canInsert = true;
             return pParent;
         }
@@ -1045,7 +1034,7 @@ namespace easy
 
             if (mCompare(key, extractKey(pCurrent->mValue)))
             {
-                EASTL_VALIDATE_COMPARE(!mCompare(extractKey(pCurrent->mValue), key)); // Validate that the compare function is sane.
+                EASY_VALIDATE_COMPARE(!mCompare(extractKey(pCurrent->mValue), key)); // Validate that the compare function is sane.
                 pCurrent = (node_type*)pCurrent->mpNodeLeft;
             } else
                 pCurrent = (node_type*)pCurrent->mpNodeRight;
@@ -1110,37 +1099,6 @@ namespace easy
 
 
     template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    easy::pair<typename rbtree<K, V, C, A, E, bM, bU>::iterator, bool>
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertKey(true_type, const key_type& key) // true_type means keys are unique.
-    {
-        // This is the pathway for insertion of unique keys (map and set, but not multimap and multiset).
-        // Note that we return a pair and not an iterator. This is because the C++ standard for map
-        // and set is to return a pair and not just an iterator.
-        bool       canInsert;
-        node_type* pPosition = DoGetKeyInsertionPositionUniqueKeys(canInsert, key);
-
-        if (canInsert)
-        {
-            const iterator itResult(DoInsertKeyImpl(pPosition, false, key));
-            return pair<iterator, bool>(itResult, true);
-        }
-
-        return pair<iterator, bool>(iterator(pPosition), false);
-    }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertKey(false_type, const key_type& key) // false_type means keys are not unique.
-    {
-        node_type* pPosition = DoGetKeyInsertionPositionNonuniqueKeys(key);
-
-        return DoInsertKeyImpl(pPosition, false, key);
-    }
-
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
     typename rbtree<K, V, C, A, E, bM, bU>::node_type*
         rbtree<K, V, C, A, E, bM, bU>::DoGetKeyInsertionPositionUniqueKeysHint(const_iterator position, bool& bForceToLeft, const key_type& key)
     {
@@ -1158,13 +1116,13 @@ namespace easy
 
             if (bPositionLessThanValue) // If (value > *position)...
             {
-                EASTL_VALIDATE_COMPARE(!mCompare(key, extractKey(position.mpNode->mValue))); // Validate that the compare function is sane.
+                EASY_VALIDATE_COMPARE(!mCompare(key, extractKey(position.mpNode->mValue))); // Validate that the compare function is sane.
 
                 const bool bValueLessThanNext = mCompare(key, extractKey(itNext.mpNode->mValue));
 
                 if (bValueLessThanNext) // If value < *itNext...
                 {
-                    EASTL_VALIDATE_COMPARE(!mCompare(extractKey(itNext.mpNode->mValue), key)); // Validate that the compare function is sane.
+                    EASY_VALIDATE_COMPARE(!mCompare(extractKey(itNext.mpNode->mValue), key)); // Validate that the compare function is sane.
 
                     if (position.mpNode->mpNodeRight)
                     {
@@ -1183,7 +1141,7 @@ namespace easy
 
         if (mnSize && mCompare(extractKey(((node_type*)mAnchor.mpNodeRight)->mValue), key))
         {
-            EASTL_VALIDATE_COMPARE(!mCompare(key, extractKey(((node_type*)mAnchor.mpNodeRight)->mValue))); // Validate that the compare function is sane.
+            EASY_VALIDATE_COMPARE(!mCompare(key, extractKey(((node_type*)mAnchor.mpNodeRight)->mValue))); // Validate that the compare function is sane.
             bForceToLeft = false;
             return (node_type*)mAnchor.mpNodeRight;
         }
@@ -1279,61 +1237,6 @@ namespace easy
 
 
     template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertKey(true_type, const_iterator position, const key_type& key) // true_type means keys are unique.
-    {
-        bool       bForceToLeft;
-        node_type* pPosition = DoGetKeyInsertionPositionUniqueKeysHint(position, bForceToLeft, key);
-
-        if (pPosition)
-            return DoInsertKeyImpl(pPosition, bForceToLeft, key);
-        else
-            return DoInsertKey(has_unique_keys_type(), key).first;
-    }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertKey(false_type, const_iterator position, const key_type& key) // false_type means keys are not unique.
-    {
-        // This is the pathway for insertion of non-unique keys (multimap and multiset, but not map and set).
-        //
-        // We follow the same approach as SGI STL/STLPort and use the position as
-        // a forced insertion position for the value when possible.
-        bool       bForceToLeft;
-        node_type* pPosition = DoGetKeyInsertionPositionNonuniqueKeysHint(position, bForceToLeft, key);
-
-        if (pPosition)
-            return DoInsertKeyImpl(pPosition, bForceToLeft, key);
-        else
-            return DoInsertKey(has_unique_keys_type(), key); // We are empty or we are inserting at the end.
-    }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::iterator
-        rbtree<K, V, C, A, E, bM, bU>::DoInsertKeyImpl(node_type* pNodeParent, bool bForceToLeft, const key_type& key)
-    {
-        RBTreeSide  side;
-        extract_key extractKey;
-
-        // The reason we may want to have bForceToLeft == true is that pNodeParent->mValue and value may be equal.
-        // In that case it doesn't matter what side we insert on, except that the C++ LWG #233 improvement report
-        // suggests that we should use the insert hint position to force an ordering. So that's what we do.
-        if (bForceToLeft || (pNodeParent == &mAnchor) || mCompare(key, extractKey(pNodeParent->mValue)))
-            side = kRBTreeSideLeft;
-        else
-            side = kRBTreeSideRight;
-
-        node_type* const pNodeNew = DoCreateNodeFromKey(key); // Note that pNodeNew->mpLeft, mpRight, mpParent, will be uninitialized.
-        RBTreeInsert(pNodeNew, pNodeParent, &mAnchor, side);
-        mnSize++;
-
-        return iterator(pNodeNew);
-    }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
     template <typename InputIterator>
     void rbtree<K, V, C, A, E, bM, bU>::insert(InputIterator first, InputIterator last)
     {
@@ -1384,7 +1287,7 @@ namespace easy
         rbtree<K, V, C, A, E, bM, bU>::erase(const_iterator first, const_iterator last)
     {
         // We expect that if the user means to clear the container, they will call clear.
-        if (EASTL_LIKELY((first.mpNode != mAnchor.mpNodeLeft) || (last.mpNode != &mAnchor))) // If (first != begin or last != end) ...
+        if (EASY_LIKELY((first.mpNode != mAnchor.mpNodeLeft) || (last.mpNode != &mAnchor))) // If (first != begin or last != end) ...
         {
             // Basic implementation:
             while (first != last)
@@ -1436,20 +1339,20 @@ namespace easy
         node_type* pCurrent = (node_type*)mAnchor.mpNodeParent; // Start with the root node.
         node_type* pRangeEnd = (node_type*)&mAnchor;             // Set it to the container end for now.
 
-        while (EASTL_LIKELY(pCurrent)) // Do a walk down the tree.
+        while (EASY_LIKELY(pCurrent)) // Do a walk down the tree.
         {
-            if (EASTL_LIKELY(!mCompare(extractKey(pCurrent->mValue), key))) // If pCurrent is >= key...
+            if (EASY_LIKELY(!mCompare(extractKey(pCurrent->mValue), key))) // If pCurrent is >= key...
             {
                 pRangeEnd = pCurrent;
                 pCurrent = (node_type*)pCurrent->mpNodeLeft;
             } else
             {
-                EASTL_VALIDATE_COMPARE(!mCompare(key, extractKey(pCurrent->mValue))); // Validate that the compare function is sane.
+                EASY_VALIDATE_COMPARE(!mCompare(key, extractKey(pCurrent->mValue))); // Validate that the compare function is sane.
                 pCurrent = (node_type*)pCurrent->mpNodeRight;
             }
         }
 
-        if (EASTL_LIKELY((pRangeEnd != &mAnchor) && !mCompare(key, extractKey(pRangeEnd->mValue))))
+        if (EASY_LIKELY((pRangeEnd != &mAnchor) && !mCompare(key, extractKey(pRangeEnd->mValue))))
             return iterator(pRangeEnd);
         return iterator((node_type*)&mAnchor);
     }
@@ -1474,20 +1377,20 @@ namespace easy
         node_type* pCurrent = (node_type*)mAnchor.mpNodeParent; // Start with the root node.
         node_type* pRangeEnd = (node_type*)&mAnchor;             // Set it to the container end for now.
 
-        while (EASTL_LIKELY(pCurrent)) // Do a walk down the tree.
+        while (EASY_LIKELY(pCurrent)) // Do a walk down the tree.
         {
-            if (EASTL_LIKELY(!compare2(extractKey(pCurrent->mValue), u))) // If pCurrent is >= u...
+            if (EASY_LIKELY(!compare2(extractKey(pCurrent->mValue), u))) // If pCurrent is >= u...
             {
                 pRangeEnd = pCurrent;
                 pCurrent = (node_type*)pCurrent->mpNodeLeft;
             } else
             {
-                EASTL_VALIDATE_COMPARE(!compare2(u, extractKey(pCurrent->mValue))); // Validate that the compare function is sane.
+                EASY_VALIDATE_COMPARE(!compare2(u, extractKey(pCurrent->mValue))); // Validate that the compare function is sane.
                 pCurrent = (node_type*)pCurrent->mpNodeRight;
             }
         }
 
-        if (EASTL_LIKELY((pRangeEnd != &mAnchor) && !compare2(u, extractKey(pRangeEnd->mValue))))
+        if (EASY_LIKELY((pRangeEnd != &mAnchor) && !compare2(u, extractKey(pRangeEnd->mValue))))
             return iterator(pRangeEnd);
         return iterator((node_type*)&mAnchor);
     }
@@ -1512,15 +1415,15 @@ namespace easy
         node_type* pCurrent = (node_type*)mAnchor.mpNodeParent; // Start with the root node.
         node_type* pRangeEnd = (node_type*)&mAnchor;             // Set it to the container end for now.
 
-        while (EASTL_LIKELY(pCurrent)) // Do a walk down the tree.
+        while (EASY_LIKELY(pCurrent)) // Do a walk down the tree.
         {
-            if (EASTL_LIKELY(!mCompare(extractKey(pCurrent->mValue), key))) // If pCurrent is >= key...
+            if (EASY_LIKELY(!mCompare(extractKey(pCurrent->mValue), key))) // If pCurrent is >= key...
             {
                 pRangeEnd = pCurrent;
                 pCurrent = (node_type*)pCurrent->mpNodeLeft;
             } else
             {
-                EASTL_VALIDATE_COMPARE(!mCompare(key, extractKey(pCurrent->mValue))); // Validate that the compare function is sane.
+                EASY_VALIDATE_COMPARE(!mCompare(key, extractKey(pCurrent->mValue))); // Validate that the compare function is sane.
                 pCurrent = (node_type*)pCurrent->mpNodeRight;
             }
         }
@@ -1547,11 +1450,11 @@ namespace easy
         node_type* pCurrent = (node_type*)mAnchor.mpNodeParent; // Start with the root node.
         node_type* pRangeEnd = (node_type*)&mAnchor;             // Set it to the container end for now.
 
-        while (EASTL_LIKELY(pCurrent)) // Do a walk down the tree.
+        while (EASY_LIKELY(pCurrent)) // Do a walk down the tree.
         {
-            if (EASTL_LIKELY(mCompare(key, extractKey(pCurrent->mValue)))) // If key is < pCurrent...
+            if (EASY_LIKELY(mCompare(key, extractKey(pCurrent->mValue)))) // If key is < pCurrent...
             {
-                EASTL_VALIDATE_COMPARE(!mCompare(extractKey(pCurrent->mValue), key)); // Validate that the compare function is sane.
+                EASY_VALIDATE_COMPARE(!mCompare(extractKey(pCurrent->mValue), key)); // Validate that the compare function is sane.
                 pRangeEnd = pCurrent;
                 pCurrent = (node_type*)pCurrent->mpNodeLeft;
             } else
@@ -1692,22 +1595,6 @@ namespace easy
         pNode->~node_type();
         EASTLFree(mAllocator, pNode, sizeof(node_type));
     }
-
-
-    template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
-    typename rbtree<K, V, C, A, E, bM, bU>::node_type*
-        rbtree<K, V, C, A, E, bM, bU>::DoCreateNodeFromKey(const key_type& key)
-    {
-        // Note that this function intentionally leaves the node pointers uninitialized.
-        // The caller would otherwise just turn right around and modify them, so there's
-        // no point in us initializing them to anything (except in a debug build).
-        node_type* const pNode = DoAllocateNode();
-
-        ::new((void*)&pNode->mValue) value_type(key);
-
-        return pNode;
-    }
-
 
     template <typename K, typename V, typename C, typename A, typename E, bool bM, bool bU>
     typename rbtree<K, V, C, A, E, bM, bU>::node_type*

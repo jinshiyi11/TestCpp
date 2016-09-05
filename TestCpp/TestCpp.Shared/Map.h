@@ -92,8 +92,6 @@ namespace easy {
 
         easy::pair<iterator, iterator>             equal_range(const Key& key);
         easy::pair<const_iterator, const_iterator> equal_range(const Key& key) const;
-
-        T& operator[](const Key& key); // Of map, multimap, set, and multimap, only map has operator[].
     }; // map
 
 
@@ -201,24 +199,6 @@ namespace easy {
 
         const_iterator itUpper(itLower);
         return easy::pair<const_iterator, const_iterator>(itLower, ++itUpper);
-    }
-
-
-    template <typename Key, typename T, typename Compare, typename Allocator>
-    inline T& map<Key, T, Compare, Allocator>::operator[](const Key& key)
-    {
-        iterator itLower(lower_bound(key)); // itLower->first is >= key.
-
-        if ((itLower == end()) || mCompare(key, (*itLower).first))
-        {
-            itLower = base_type::DoInsertKey(true_type(), itLower, key);
-        }
-
-        return (*itLower).second;
-
-        // Reference implementation of this function, which may not be as fast:
-        //iterator it(base_type::insert(easy::pair<iterator, iterator>(key, T())).first);
-        //return it->second;
     }
 
 
