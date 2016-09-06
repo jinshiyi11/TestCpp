@@ -31,8 +31,6 @@ namespace easy
         typedef typename base_type::value_type                                          value_type;
         typedef typename base_type::iterator                                            iterator;
         typedef typename base_type::const_iterator                                      const_iterator;
-        typedef typename base_type::reverse_iterator                                    reverse_iterator;
-        typedef typename base_type::const_reverse_iterator                              const_reverse_iterator;
         typedef Compare                                                                 value_compare;
         // Other types are inherited from the base class.
 
@@ -56,9 +54,6 @@ namespace easy
         size_type erase(const Key& k);
         iterator  erase(const_iterator position);
         iterator  erase(const_iterator first, const_iterator last);
-
-        reverse_iterator erase(const_reverse_iterator position);
-        reverse_iterator erase(const_reverse_iterator first, const_reverse_iterator last);
 
         size_type count(const Key& k) const;
 
@@ -91,14 +86,6 @@ namespace easy
         : base_type(x)
     {
     }
-
-
-    template <typename Key, typename Compare>
-    inline set<Key, Compare>::set(std::initializer_list<value_type> ilist, const Compare& compare)
-        : base_type(ilist.begin(), ilist.end(), compare)
-    {
-    }
-
 
     template <typename Key, typename Compare>
     template <typename Iterator>
@@ -157,29 +144,6 @@ namespace easy
     {
         const const_iterator it(find(k));
         return (it != end()) ? (size_type)1 : (size_type)0;
-    }
-
-
-    template <typename Key, typename Compare>
-    inline typename set<Key, Compare>::reverse_iterator
-        set<Key, Compare>::erase(const_reverse_iterator position)
-    {
-        return reverse_iterator(erase((++position).base()));
-    }
-
-
-    template <typename Key, typename Compare>
-    inline typename set<Key, Compare>::reverse_iterator
-        set<Key, Compare>::erase(const_reverse_iterator first, const_reverse_iterator last)
-    {
-        // Version which erases in order from first to last.
-        // difference_type i(first.base() - last.base());
-        // while(i--)
-        //     first = erase(first);
-        // return first;
-
-        // Version which erases in order from last to first, but is slightly more efficient:
-        return reverse_iterator(erase((++last).base(), (++first).base()));
     }
 
 

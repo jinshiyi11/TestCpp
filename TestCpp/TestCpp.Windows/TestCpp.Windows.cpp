@@ -15,6 +15,7 @@
 #include <string>
 #include <map>
 #include "TestEasyMap.h"
+#include "TestEasySet.h"
 
 
 
@@ -29,6 +30,7 @@ int main()
     //eastl::map<int,int> map2;
     //map2.insert(eastl::make_pair(2,3));
 
+    TestEasySet::main();
     TestEasyMap::main();
 
     TestVirtualDestructor::main();

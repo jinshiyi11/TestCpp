@@ -31,6 +31,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)TestVirtualDestructor.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestEasyMap.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)IServiceManager.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestEasySet.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)functor\TestBind.h">
@@ -59,5 +60,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Set.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)IServiceManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)IService.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestEasySet.h" />
   </ItemGroup>
 </Project>

@@ -22,6 +22,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\TestSigslot.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestAuto.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestEasyMap.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)TestEasySet.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestInterface.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestRValueReference.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestTuple.cpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\TestSigslot.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestAuto.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestEasyMap.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)TestEasySet.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestInterface.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestRValueReference.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestTuple.h" />

@@ -1,5 +1,6 @@
 #include "TestEasyMap.h"
 #include <iostream>
+#include <string>
 
 
 TestEasyMap::TestEasyMap()
@@ -49,6 +50,9 @@ void TestEasyMap::main()
 
     myMap.clear();
     print(myMap);
-    
+
+    easy::map<std::string, std::string> map2;
+    map2.insert(easy::make_pair(std::string("aa"), std::string("bb")));
+    print(map2);
 
 }
