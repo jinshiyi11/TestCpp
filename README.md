@@ -4,6 +4,21 @@
 ## 模板
 - 实现一个单例模板
 - template&lt; classFunction, class... Args &gt; explicitThread(Function&amp;&amp; f, Args&amp;&amp;... args);
+- 成员函数模板(类模板中的成员函数也是模板) http://en.cppreference.com/w/cpp/language/member_template
+```c++
+template<typename T1>
+struct string {
+    // member template function
+    template<typename T2>
+    int compare(const T2&);
+    // constructors can be templates too
+    template<typename T2>
+    string(const std::basic_string<T2>& s) { /*...*/ }
+};
+// out of class definition of string<T1>::compare<T2> 
+template<typename T1> // for the enclosing class template
+template<typename T2> // for the member template
+int string<T1>::compare(const T2& s) { /* ... */ }
 
 模板参数类型声明为class... Args怎么用？
 - 实现一个unique_ptr,unique_ptr的Deleter 模板参数实现，如何自定义Deleter

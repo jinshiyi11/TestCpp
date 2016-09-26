@@ -16,6 +16,7 @@
 */
 
 #include "TestEasyMap.h"
+#include "TestEnum.h"
 
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "AndroidProject1.NativeActivity", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "AndroidProject1.NativeActivity", __VA_ARGS__))
@@ -213,9 +214,12 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
 	}
 }
 
-void test() {
+void mytest() {
     int len = sizeof(wchar_t);
     LOGW("hello");
+
+    test::TestEnum testEnum;
+    testEnum.print(test::TestEnum::Color::Green);
 }
 
 /**
@@ -234,7 +238,7 @@ void android_main(struct android_app* state) {
 	state->onInputEvent = engine_handle_input;
 	engine.app = state;
 
-    test();
+    mytest();
 
 	//准备监控加速器
 	engine.sensorManager = ASensorManager_getInstance();
