@@ -1,9 +1,10 @@
 # C++ 各种问题收集
 ## C++语法
-- new运算符重载,Allocator实现
+- new运算符重载,Allocator实现 
 ## 模板
 - 模板文章
   * http://www.codeproject.com/Articles/257589/An-Idiots-Guide-to-Cplusplus-Templates-Part
+  * http://www.codeproject.com/Articles/268849/An-Idiots-Guide-to-Cplusplus-Templates-Part
 - 实现一个单例模板
 - template&lt; classFunction, class... Args &gt; explicitThread(Function&amp;&amp; f, Args&amp;&amp;... args);
 - 成员函数模板(类模板中的成员函数也是模板) http://en.cppreference.com/w/cpp/language/member_template
