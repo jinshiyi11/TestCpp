@@ -17,6 +17,7 @@
 #include <iostream>
 #include "TestEasyMap.h"
 #include "TestEasySet.h"
+#include "construct/TestConstructor.h"
 
 template<typename T>
 void printMap(const T& t)
@@ -29,6 +30,7 @@ void printMap(const T& t)
 
 int main()
 {
+    TestConstructor::main();
 
     char* buf = new char[16];
     delete[] buf;

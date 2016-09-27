@@ -21,6 +21,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\Switch.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)sigslot\TestSigslot.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestAuto.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)construct\TestConstructor.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestEasyMap.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestEasySet.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)TestEnum.cpp" />
@@ -41,6 +42,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\Switch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sigslot\TestSigslot.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestAuto.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)construct\TestConstructor.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestEasyMap.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestEasySet.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TestEnum.h" />
